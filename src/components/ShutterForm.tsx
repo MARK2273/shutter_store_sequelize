@@ -153,6 +153,7 @@ export default function ShutterForm(): JSX.Element {
 
   const onSubmit: SubmitHandler<FormType> = async (data: FormType) => {
     try {
+      console.log(data);
       await axios.post("/api/shutters", data);
       console.log("Form submitted successfully");
     } catch (error) {

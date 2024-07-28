@@ -10,7 +10,6 @@ interface Order {
   discountType: string;
   discount: number;
   shutters: Shutter[];
-  totalAmount: number;
 }
 
 interface Shutter {
@@ -43,6 +42,30 @@ const OrderListPage: React.FC = () => {
     setDeleteIndex(index);
     setIsModal(true);
   }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (deleteIndex !== null) {
+      try {
+        const orderId = orders[deleteIndex].id;
+        const response = await fetch(`/api/orders/${orderId}`, {
+          method: "DELETE",
+        });
+
+        if (response.ok) {
+          setOrders((prevOrders) =>
+            prevOrders.filter((_, i) => i !== deleteIndex)
+          );
+        } else {
+          console.error("Failed to delete order");
+        }
+      } catch (error) {
+        console.error("Failed to delete order:", error);
+      } finally {
+        setIsModal(false);
+        setDeleteIndex(null);
+      }
+    }
+  }, [deleteIndex, orders]);
 
   return (
     <div className="p-5">
@@ -106,7 +129,7 @@ const OrderListPage: React.FC = () => {
         <div className="text-center text-gray-500">No data available.</div>
       )}
 
-      {/* {isModal && (
+      {isModal && (
         <ConfirmationModal
           label=""
           message="Are you sure you want to delete this order?"
@@ -114,11 +137,9 @@ const OrderListPage: React.FC = () => {
           onCancel={() => setIsModal(false)}
           setIsModal={setIsModal}
         />
-      )} */}
+      )}
     </div>
   );
 };
 
-OrderListPage.displayName = "OrderListPage";
-
-export default React.memo(OrderListPage);
+export default OrderListPage;

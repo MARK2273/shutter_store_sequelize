@@ -3,55 +3,55 @@ import sequelize from "../../models";
 import Order from "../../models/order";
 import Shutter from "../../models/shutter";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  console.log("API route called with method:", req.method);
-  console.log("Request body:", req.body);
-
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "POST") {
-    const { totalAmount, discountInfo, shutter, basicInfo } = req.body;
+    const { basicInfo, discountInfo, shutter, totalAmount } = req.body;
 
     const transaction = await sequelize.transaction();
+
     try {
-      const order = await Order.create(
+      // Create order
+      const newOrder = await Order.create(
         {
-          staffName: basicInfo.staffName,
           customerName: basicInfo.customerName,
+          staffName: basicInfo.staffName,
           date: basicInfo.date,
           discountType: discountInfo.discountType,
           discount: discountInfo.discount,
           totalAmount: totalAmount,
+          isDeleted: false,
         },
         { transaction }
       );
 
-      const shutterPromises = shutter.map((shutter: any) => {
-        return Shutter.create(
+      // Create shutters
+      const shutterPromises = shutter.map((shutterItem: any) =>
+        Shutter.create(
           {
-            orderId: order.id, // Foreign key
-            shutterName: shutter.shutterName,
-            width: shutter.width,
-            height: shutter.height,
-            area: shutter.area,
+            shutterName: shutterItem.shutterName,
+            width: shutterItem.width,
+            height: shutterItem.height,
+            area: shutterItem.area,
+            orderId: newOrder.id,
           },
           { transaction }
-        );
-      });
+        )
+      );
 
       await Promise.all(shutterPromises);
+
       await transaction.commit();
 
-      res
-        .status(201)
-        .json({ message: "Order and shutters created successfully" });
+      res.status(201).json({ message: "Order created successfully" });
     } catch (error) {
       await transaction.rollback();
       console.error("Error creating order and shutters:", error);
-      res.status(500).json({ error: "Failed to create order and shutters" });
+      res.status(500).json({ message: "Internal Server Error" });
     }
   } else {
-    res.status(405).json({ error: "Method not allowed" });
+    res.setHeader("Allow", ["POST"]);
+    res.status(405).json({ message: `Method ${req.method} Not Allowed` });
   }
-}
+};
+
+export default handler;
