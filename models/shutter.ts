@@ -3,16 +3,11 @@ import sequelize from "./index";
 
 interface ShutterAttributes {
   id: number;
-  staffName: string;
-  customerName: string;
-  date: Date;
+  orderId: number;
   shutterName: string;
   width: number;
   height: number;
   area: number;
-  discountType: string;
-  discount: number;
-  totalAmount: number;
 }
 
 interface ShutterCreationAttributes extends Optional<ShutterAttributes, "id"> {}
@@ -22,16 +17,11 @@ class Shutter
   implements ShutterAttributes
 {
   public id!: number;
-  public staffName!: string;
-  public customerName!: string;
-  public date!: Date;
+  public orderId!: number;
   public shutterName!: string;
   public width!: number;
   public height!: number;
   public area!: number;
-  public discountType!: string;
-  public discount!: number;
-  public totalAmount!: number;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -44,17 +34,13 @@ Shutter.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    staffName: {
-      type: DataTypes.STRING,
+    orderId: {
+      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
-    },
-    customerName: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    date: {
-      type: DataTypes.DATE,
-      allowNull: false,
+      references: {
+        model: "orders",
+        key: "id",
+      },
     },
     shutterName: {
       type: DataTypes.STRING,
@@ -69,18 +55,6 @@ Shutter.init(
       allowNull: false,
     },
     area: {
-      type: DataTypes.FLOAT,
-      allowNull: false,
-    },
-    discountType: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    discount: {
-      type: DataTypes.FLOAT,
-      allowNull: false,
-    },
-    totalAmount: {
       type: DataTypes.FLOAT,
       allowNull: false,
     },
