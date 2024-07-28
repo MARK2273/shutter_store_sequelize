@@ -23,6 +23,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         },
         { transaction }
       );
+      console.log(newOrder, "///////////////////////");
 
       // Create shutters
       const shutterPromises = shutter.map((shutterItem: any) =>
@@ -32,7 +33,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             width: shutterItem.width,
             height: shutterItem.height,
             area: shutterItem.area,
-            orderId: newOrder.id,
+            orderId: newOrder.dataValues.id,
           },
           { transaction }
         )

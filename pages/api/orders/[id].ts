@@ -55,7 +55,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
               width: shutterItem.width,
               height: shutterItem.height,
               area: shutterItem.area,
-              orderId: id,
+              orderId: +id,
             },
             { transaction }
           )
