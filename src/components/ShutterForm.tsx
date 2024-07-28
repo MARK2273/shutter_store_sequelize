@@ -1,67 +1,25 @@
-"use client";
-
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
-import ShutterSection, {
-  ShutterListT,
-  ShutterT,
-} from "@/sections/ShutterSection";
+import ShutterSection from "@/sections/ShutterSection";
 import BasicInfoSection from "@/sections/BasicInfoSection";
 import DiscountSection from "@/sections/DiscountSection";
 import ButtonComponent from "@/components/common/ButtonComponent";
-import { useContext, useEffect, useState, useCallback } from "react";
+import { useContext, useEffect, useState } from "react";
 import AddCustomer from "@/sections/AddCustomer";
 import { yupResolver } from "@hookform/resolvers/yup";
 import validationSchema from "@/validators/shutterFormSchema";
 import { FormType } from "@/types/basicInfoTypes";
 import { AmountContext } from "@/contexts/AmountContext";
 import axios from "axios";
-import {
-  ReadonlyURLSearchParams,
-  useRouter,
-  useSearchParams,
-} from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function ShutterForm(): JSX.Element {
-  const { finalAmount } = useContext(AmountContext) as {
+  const { finalAmount, setFinalAmount } = useContext(AmountContext) as {
     finalAmount: number;
+    setFinalAmount: React.Dispatch<React.SetStateAction<number>>;
   };
 
-  const params: ReadonlyURLSearchParams | null = useSearchParams();
-
-  const id: string | null | undefined = params?.get("id");
-
-  // const orderDetails = useSelector((state: RootState) => {
-  //   if (!id) return undefined;
-  //   return state.form.find((_, index: number) => index === +id);
-  // });
-
-  // const temp = orderDetails
-  //   ? {
-  //     basicInfo: {
-  //       staffName: orderDetails.basicInfo.staffName,
-  //       customerName: orderDetails.basicInfo.customerName,
-  //       date: new Date(orderDetails.basicInfo.date)
-  //         .toISOString()
-  //         .split("T")[0],
-  //     },
-  //     shutter: orderDetails.shutter,
-  //     discountInfo: {
-  //       discountType: orderDetails.discountInfo.discountType,
-  //       discount: +orderDetails.discountInfo.discount,
-  //     },
-  //     totalAmount: orderDetails.totalAmount,
-  //   }
-  //   : {
-  //       discountInfo: { discount: 0, discountType: "amount" },
-  //       shutter: [
-  //         {
-  //           shutterName: "",
-  //           width: "",
-  //           height: "",
-  //           area: 0,
-  //         },
-  //       ],
-  //     };
+  const params = useSearchParams();
+  const id = params?.get("id");
 
   const {
     formState: { errors },
@@ -88,78 +46,51 @@ export default function ShutterForm(): JSX.Element {
     },
   });
 
-  // useEffect(() => {
-  //   console.log(orderDetails, "details");
-  //   if (orderDetails) {
-  //     reset({
-  //       basicInfo: {
-  //         staffName: orderDetails.basicInfo.staffName,
-  //         customerName: orderDetails.basicInfo.customerName,
-  //         date: new Date(orderDetails.basicInfo.date)
-  //           .toISOString()
-  //           .split("T")[0],
-  //       },
-  //       shutter: orderDetails.shutter,
-  //       discountInfo: {
-  //         discountType: orderDetails.discountInfo.discountType,
-  //         discount: +orderDetails.discountInfo.discount,
-  //       },
-  //       totalAmount: orderDetails.totalAmount,
-  //     });
-  //   }
-  // }, [id, orderDetails, reset]);
-
   const [isModal, setIsModal] = useState(false);
 
-  const route = useRouter();
+  const router = useRouter();
 
-  // const onSubmit: SubmitHandler<FormType> = useCallback(
-  //   (data: FormType) => {
-  //     // const shutterData: ShutterListT = data.shutter.map(
-  //     //   (shutter: ShutterT): ShutterT => ({
-  //     //     shutterName: shutter.shutterName,
-  //     //     width: shutter.width,
-  //     //     height: shutter.height,
-  //     //     area: Number((Number(shutter.width) * Number(shutter.height)).toFixed(2)),
-  //     //   })
-  //     // );
+  useEffect(() => {
+    if (id) {
+      const fetchData = async () => {
+        try {
+          const { data } = await axios.get(`/api/orders/${id}`);
+          reset({
+            basicInfo: {
+              customerName: data.customerName,
+              staffName: data.staffName,
+              date: new Date(data.date).toISOString().split("T")[0],
+            },
+            shutter: data.shutters,
+            discountInfo: {
+              discountType: data.discountType,
+              discount: data.discount,
+            },
+            totalAmount: data.totalAmount,
+          });
+          setFinalAmount(data.totalAmount);
+        } catch (error) {
+          console.error("Error fetching order data:", error);
+        }
+      };
 
-  //     // const formData = {
-  //     //   discountInfo: {
-  //     //     discountType: data.discountInfo.discountType,
-  //     //     discount: data.discountInfo.discount,
-  //     //   },
-  //     //   basicInfo: {
-  //     //     staffName: data.basicInfo.staffName,
-  //     //     customerName: data.basicInfo.customerName,
-  //     //     date: data.basicInfo.date,
-  //     //   },
-  //     //   shutter: shutterData,
-  //     //   totalAmount: finalAmount.toString(),
-  //     // };
-
-  //     // if (id) {
-  //     //   dispatch(editFormData({ index: +id, data: formData }));
-  //     // } else {
-  //     //   dispatch(addFormData(formData));
-  //     // }
-
-  //     console.log(data);
-
-  //     // route.push("/list");
-  //   },
-  //   [id, route, finalAmount]
-  // );
+      fetchData();
+    }
+  }, [id, reset]);
 
   const onSubmit: SubmitHandler<FormType> = async (data: FormType) => {
     try {
-      console.log(data);
-      await axios.post("/api/shutters", data);
-      console.log("Form submitted successfully");
+      if (id) {
+        await axios.put(`/api/orders/${id}`, data);
+      } else {
+        await axios.post("/api/shutters", data);
+      }
+      router.push("/list");
     } catch (error) {
       console.error("Error submitting form:", error);
     }
   };
+
   return (
     <div id="shutterForm" className="w-full">
       <div id="basicInfo" className="flex justify-center h-full">
@@ -183,7 +114,7 @@ export default function ShutterForm(): JSX.Element {
           <DiscountSection register={register} errors={errors} watch={watch} />
           <ButtonComponent
             type="submit"
-            label={"Proceed"}
+            label={id ? "Update" : "Proceed"}
             customClass={"mb-1 text-green-500 border-green-500"}
           />
         </form>
